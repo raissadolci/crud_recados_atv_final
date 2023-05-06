@@ -1,32 +1,42 @@
-import express, { request, response } from "express";
-
+//Inicializando o projeto
+import express from "express";
+import bcrypt, { hash } from "bcrypt";
 const servidor = express();
-
 servidor.use(express.json());
 
-//Inicializando o projeto
 
 //Criação dos usuários;
 const usuarios = [];
 
 servidor.post('/usuarios', (request, response)=>{
     const usuario = request.body;
+    const saltRounds = 10;
 
-    usuarios.push({
-        id:Math.floor(Math.random()*234), 
-        nome:usuario.nome, 
-        email:usuario.email, 
-        senha:usuario.senha
-    });
-    response.status(201).json("Usuário criado com sucesso");
-})
+    bcrypt.hash(usuario.senha, saltRounds, function(err, hash){
+        if(hash) {
+            usuarios.push({
+                id:Math.floor(Math.random()*234), 
+                nome:usuario.nome, 
+                email:usuario.email, 
+                senha:hash
+            });
+            return response.status(201).json("Usuário criado com sucesso");
+        } else {
+            return response.status(400).json("Não foi possível criar o usuário, informe os dados necessários corretamente" + err)
+        }
+    })
+
+});
+
+
+//Login do usuário
+
 
 //Leitura de todos os usuários
 servidor.get('/usuarios', (request, response)=>{
-    response.status(200).json(usuarios)
+    return response.status(200).json(usuarios)
 })
 
-servidor.listen(3030, ()=>console.log("Servidor rodando"))
 
 //Leitura de um usuário por ID
 servidor.get('/usuarios/:id', (request, response)=>{
@@ -44,9 +54,9 @@ servidor.put('/usuarios/:id', (request, response)=>{
         id: id,
         nome: usuario.nome,
         email: usuario.email,
-        senha: usuario.senha
+        senha: usuario.hash
     };
-
+    
     response.status(200).json(usuarios[indexUsuario]);
 })
 
@@ -57,3 +67,5 @@ servidor.delete('/usuarios/:id', (request, response)=>{
     usuarios.splice(indexUsuario, 1);
     return response.status(200).json();
 })
+
+servidor.listen(3030, ()=>console.log("Servidor rodando"));
