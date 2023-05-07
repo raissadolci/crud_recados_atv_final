@@ -5,12 +5,18 @@ const servidor = express();
 servidor.use(express.json());
 
 
-//Criação dos usuários;
+//Criação dos usuários com validação de email;
 const usuarios = [];
 
-servidor.post('/usuarios', (request, response)=>{
+servidor.post('/usuarios',  (request, response)=>{
     const usuario = request.body;
     const saltRounds = 10;
+    const emailExistente = usuario.email
+
+    const email = usuarios.find(usuarios => usuarios.email === emailExistente);
+    if (email) {
+        return response.status(400).json('Esse email já existe!')
+    }
 
     bcrypt.hash(usuario.senha, saltRounds, function(err, hash){
         if(hash) {
@@ -25,12 +31,29 @@ servidor.post('/usuarios', (request, response)=>{
             return response.status(400).json("Não foi possível criar o usuário, informe os dados necessários corretamente" + err)
         }
     })
+    
 
 });
 
 
-//Login do usuário
+//Login do usuário com validção de email e senha
+servidor.post('/usuarios/login', (request, response)=>{
+    const login = request.body
+    const email = login.email
+    const senha = login.senha
 
+    const usuario = usuarios.find(usuarios => usuarios.email === email);
+    if (!usuario) {
+        return response.status(400).json('Informe um email válido')
+    }
+    bcrypt.compare(senha, usuario.senha, function(err, result) {
+        if(result){
+            return response.status(200).json("Login efetuado com sucesso");
+        } else {
+            return response.status(400).json("Verifique os dados informados");
+        }
+    });
+})
 
 //Leitura de todos os usuários
 servidor.get('/usuarios', (request, response)=>{
@@ -42,7 +65,7 @@ servidor.get('/usuarios', (request, response)=>{
 servidor.get('/usuarios/:id', (request, response)=>{
     const id = Number(request.params.id);
     const usuario = usuarios.find(usuario => usuario.id===id);
-    response.json(usuario);
+    return response.json(usuario);
 })
 
 //Atualizar usuário por ID
@@ -57,7 +80,7 @@ servidor.put('/usuarios/:id', (request, response)=>{
         senha: usuario.hash
     };
     
-    response.status(200).json(usuarios[indexUsuario]);
+    return response.status(200).json(usuarios[indexUsuario]);
 })
 
 //Deletar usuário por ID
