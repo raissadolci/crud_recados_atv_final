@@ -8,6 +8,7 @@ servidor.use(express.json());
 //Criação dos usuários com validação de email;
 const usuarios = [];
 
+
 servidor.post('/usuarios',  (request, response)=>{
     const usuario = request.body;
     const saltRounds = 10;
@@ -24,15 +25,14 @@ servidor.post('/usuarios',  (request, response)=>{
                 id:Math.floor(Math.random()*234), 
                 nome:usuario.nome, 
                 email:usuario.email, 
-                senha:hash
+                senha:hash,
+                recados: []
             });
             return response.status(201).json("Usuário criado com sucesso");
         } else {
             return response.status(400).json("Não foi possível criar o usuário, informe os dados necessários corretamente" + err)
         };
     });
-    
-
 });
 
 
@@ -55,7 +55,7 @@ servidor.post('/usuarios/login', (request, response)=>{
     });
 });
 
-//Leitura de todos os usuários
+//Leitura de todos os usuários 
 servidor.get('/usuarios', (request, response)=>{
     return response.status(200).json(usuarios)
 });
@@ -65,73 +65,50 @@ servidor.get('/usuarios', (request, response)=>{
 servidor.get('/usuarios/:id', (request, response)=>{
     const id = Number(request.params.id);
     const usuario = usuarios.find(usuario => usuario.id === id);
+    if (!usuario) {
+        return response.json('Digite um ID válido')
+    } else {
+        return response.status(200).json(usuario);
+    }
 
-    return response.json(usuario);
-});
-
-//Atualizar usuário por ID
-servidor.put('/usuarios/:id', (request, response)=>{
-    const usuario = request.body;
-    const id = Number(request.params.id);
-    const indexUsuario = usuarios.findIndex(usuario => usuario.id === id);
-    usuarios[indexUsuario] = {
-        id: id,
-        nome: usuario.nome,
-        email: usuario.email,
-        senha: usuario.hash
-    };
-    
-    return response.status(200).json(usuarios[indexUsuario]);
-});
-
-//Deletar usuário por ID
-servidor.delete('/usuarios/:id', (request, response)=>{
-    const id = Number(request.params.id);
-    const indexUsuario = usuarios.findIndex(usuario => usuario.id === id);
-    usuarios.splice(indexUsuario, 1);
-    return response.status(200).json('Usuário deletado');
 });
 
 
 //Inicio do CRUD de recados
-let recados = [];
 
 //Criação dos recados
-servidor.post('/recados', (request, response)=>{
+servidor.post('/usuarios/:id/recado', (request, response)=>{
     const recado = request.body;
+    const id = Number(request.params.id);
 
-    recados.push({
-        id:Math.floor(Math.random()*365), 
+    const idUsuario = usuarios.findIndex(usuario => usuario.id === id)
+
+    usuarios[idUsuario].recados.push({
+        idRecado:Math.floor(Math.random()*365), 
         titulo:recado.titulo,
         descricao:recado.descricao
     });
+     
+    
     return response.status(201).json('Recado criado com sucesso!');
 });
 
-//Ler todos os recados
-servidor.get('/recados', (request, response)=>{
-    return response.status(200).json(recados);
-});
-
-//Ler todos os recados por ID
-servidor.get('/recados/:id', (request, response)=>{
-    const id = Number(request.params.id);
-    const recado = recados.find(recados => recados.id === id);
-
-    return response.status(200).json(recado);
-});
 
 //Atualizar recado por ID
-servidor.put('/recados/:id', (request, response)=>{
+servidor.put('/usuarios/:id/recado/:idRecado', (request, response)=>{
     const recado = request.body;
-    const id = Number(request.params.id);
-    const indexRecado = recados.findIndex(recado => recado.id === id);
-    recados[indexRecado] = {
-        id: id,
+    const idUsuario = Number(request.params.id);
+    const idRecado = Number(request.params.idRecado);
+
+    const indexUsuario = usuarios.find(usuario => usuario.id === idUsuario)
+    const indexRecado = usuarios.recados.find(recado => recado.id === idRecado);
+
+    usuarios[indexUsuario].recados[indexRecado] = {
+        idRecado: id,
         titulo: recado.titulo,
         descricao: recado.descricao
     };
-    return response.status(200).json(recados[indexRecado]);
+    return response.status(200).json(usuarios[indexUsuario]);
 })
 
 //Deletar recado por ID
@@ -142,4 +119,4 @@ servidor.delete('/recados/:id', (request, response)=>{
     return response.status(200).json('Recado deletado');
 })
 
-servidor.listen(3030, ()=>console.log("Servidor rodando"));
+servidor.listen(8080, ()=>console.log("Servidor rodando"));
