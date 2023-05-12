@@ -82,40 +82,60 @@ servidor.post('/usuarios/:id/recado', (request, response)=>{
     const id = Number(request.params.id);
 
     const idUsuario = usuarios.findIndex(usuario => usuario.id === id)
+    
+    if (!usuarios[idUsuario]) {
+        return response.status(404).json('Usuário não encontrado.');
+    }
 
     usuarios[idUsuario].recados.push({
         idRecado:Math.floor(Math.random()*365), 
         titulo:recado.titulo,
         descricao:recado.descricao
     });
-     
-    
     return response.status(201).json('Recado criado com sucesso!');
 });
 
 
 //Atualizar recado por ID
-servidor.put('/usuarios/:id/recado/:idRecado', (request, response)=>{
+servidor.put('/usuarios/recado/:idRecado', (request, response) => {
     const recado = request.body;
-    const idUsuario = Number(request.params.id);
-    const idRecado = Number(request.params.idRecado);
-
-    const indexUsuario = usuarios.find(usuario => usuario.id === idUsuario)
-    const indexRecado = usuarios.recados.find(recado => recado.id === idRecado);
-
-    usuarios[indexUsuario].recados[indexRecado] = {
-        idRecado: id,
-        titulo: recado.titulo,
-        descricao: recado.descricao
+    const { idRecado } = request.params;
+  
+    //Achar usuário
+    const usuario = usuarios.find(usuario => usuario.recados && usuario.recados.some(r => r.idRecado === Number(idRecado)));
+    
+    //Validação recado e usuário
+    if (!usuario || !usuario.recados) {
+      return response.status(404).json('Usuário ou recado não encontrado.');
+    }
+   //Achar index recado
+    const indexRecado = usuario.recados.findIndex(recado => recado.idRecado === Number(idRecado));
+  
+    usuario.recados[indexRecado] = {
+      idRecado: Number(idRecado),
+      titulo: recado.titulo,
+      descricao: recado.descricao
     };
-    return response.status(200).json(usuarios[indexUsuario]);
-})
+  
+    return response.status(200).json(usuario);
+  });
 
 //Deletar recado por ID
-servidor.delete('/recados/:id', (request, response)=>{
-    const id = request.params.id;
-    const indexRecado = recado.findIndex(recado => recado.id === id);
-    recados.splice(indexRecado, 1);
+servidor.delete('/usuarios/recado/:idRecado', (request, response)=>{
+    const {idRecado} = request.params;
+
+    //Achar usuário
+    const usuario = usuarios.find(usuario => usuario.recados && usuario.recados.some(r => r.idRecado === Number(idRecado)));
+
+     //Validação recado e usuário
+    if (!usuario || !usuario.recados) {
+        return response.status(404).json('Usuário ou recado não encontrado.');
+    }
+
+    //Achar index recado
+    const indexRecado = usuario.recados.findIndex(recado => recado.id === Number(idRecado));
+
+    usuario.recados.splice(indexRecado, 1);
     return response.status(200).json('Recado deletado');
 })
 
